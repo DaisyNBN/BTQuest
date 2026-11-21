@@ -32,6 +32,10 @@
  * app mid-ride).
  *
  * Polls every 7 s while the screen is focused and the app is in the foreground.
+ *
+ * DEMO MODE: with EXPO_PUBLIC_DEMO_MODE=1 in .env, useTrip is the fake
+ * useDemoTrip instead (pretend train, one stop every 20 s, no network/GPS).
+ * Restart the dev server with `npx expo start -c` after changing .env.
  */
 import { useIsFocused } from 'expo-router';
 import * as Location from 'expo-location';
@@ -44,6 +48,7 @@ import {
   type Direction,
   type Train,
 } from '@/api/mbta';
+import { useDemoTrip } from '@/hooks/useDemoTrip';
 import { useNow } from '@/hooks/useNow';
 import { usePolling } from '@/hooks/usePolling';
 import { distanceMeters, planTrip, stationsBefore, trainServesTrip, type TripPlan } from '@/lib/redLine';
@@ -53,7 +58,13 @@ const GPS_MAX_AGE_MS = 2 * 60_000;
 const GPS_MAX_DISTANCE_M = 600;
 const MAX_MISSED_POLLS = 3; // ~20 s without the locked train → pick again
 
-export type TripSource = 'gps' | 'prediction' | 'none';
+/**
+ * True when EXPO_PUBLIC_DEMO_MODE=1. Must be written as the full
+ * `process.env.EXPO_PUBLIC_…` expression — Expo inlines it at build time.
+ */
+export const DEMO_MODE = process.env.EXPO_PUBLIC_DEMO_MODE === '1';
+
+export type TripSource = 'gps' | 'prediction' | 'demo' | 'none';
 
 export type Trip = {
   from: string;
@@ -286,7 +297,7 @@ function useGpsRef(active: boolean): RefObject<GpsFix | null> {
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
-export function useTrip(from: string, to: string): TripResult {
+function useLiveTrip(from: string, to: string): TripResult {
   const plan = useMemo(() => planTrip(from, to), [from, to]);
   const planError = 'error' in plan ? plan.error : undefined;
   const key = `${from}>${to}`;
@@ -339,3 +350,10 @@ export function useTrip(from: string, to: string): TripResult {
     onArrive,
   };
 }
+
+/**
+ * The hook screens use. Picking the implementation once at module load is
+ * safe for the rules of hooks: DEMO_MODE is a build-time constant, so every
+ * render of every component always calls the same hook.
+ */
+export const useTrip: (from: string, to: string) => TripResult = DEMO_MODE ? useDemoTrip : useLiveTrip;
