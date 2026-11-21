@@ -1,10 +1,10 @@
 /**
- * useRedLineAlerts() — Red Line service alerts active right now.
+ * useRedLineAlerts(): Red Line service alerts active right now.
  *
  *   const { alerts } = useRedLineAlerts();   // optional arg: route (default 'Red')
  *
  * - `alerts`: most severe first (see `Alert` in @/api/mbta). Watch for
- *   effect 'SHUTTLE' / 'SUSPENSION' — part of the line has no trains.
+ *   effect 'SHUTTLE' / 'SUSPENSION', which mean part of the line has no trains.
  * - Polls every 60 s; pauses when unfocused or in the background.
  * - Errors are swallowed (alerts are nice-to-have); `error` is exposed for debugging.
  */

@@ -1,5 +1,5 @@
 /**
- * usePolling(fetcher, intervalMs, key) — shared polling engine for the MBTA hooks.
+ * usePolling(fetcher, intervalMs, key): shared polling engine for the MBTA hooks.
  *
  * - Fetches right away, then again `intervalMs` after each request finishes
  *   (so slow responses never pile up).

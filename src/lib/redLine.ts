@@ -77,17 +77,21 @@ export function stationsBefore(from: string, direction: Direction): Set<string> 
 }
 
 /**
- * Does this train actually reach the rider's destination?
- * Uses the headsign (= last stop), e.g. today's 'Broadway' short-turns
- * don't reach Quincy. Unknown/missing headsigns are assumed to be fine.
+ * Will this train still stop at `stationId`? Uses the headsign (= the trip's
+ * last stop): e.g. during a shuttle, a northbound 'JFK/UMass' train never
+ * reaches South Station and a southbound 'Broadway' train never reaches Quincy.
+ * Unknown/missing headsigns are assumed to be fine.
  */
-export function trainServesTrip(train: Train, plan: TripPlan): boolean {
-  if (train.direction !== plan.direction) return false;
+export function trainReaches(train: Train, stationId: string): boolean {
   const terminal = STATIONS.find((s) => s.name === train.headsign);
-  if (!terminal) return true;
-  if (terminal.id === plan.to) return true;
-  const toTerminal = planTrip(plan.from, terminal.id);
-  return !('error' in toTerminal) && toTerminal.direction === plan.direction && toTerminal.stops.includes(plan.to);
+  if (!terminal || terminal.id === stationId) return true;
+  const rest = planTrip(stationId, terminal.id); // stationId → terminal must be in the train's direction
+  return !('error' in rest) && rest.direction === train.direction;
+}
+
+/** Right direction, and the train gets all the way to the rider's destination. */
+export function trainServesTrip(train: Train, plan: TripPlan): boolean {
+  return train.direction === plan.direction && trainReaches(train, plan.to);
 }
 
 /** Straight-line distance in metres between two lat/lng points. */

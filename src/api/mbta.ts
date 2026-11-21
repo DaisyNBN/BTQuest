@@ -54,7 +54,7 @@ export type Train = {
   status: TrainStatus;
   stationId?: string;       // app id of the current/next station (mapped from the platform id)
   headsign?: string;
-  tripId?: string;          // MBTA trip id — pass to getTripPredictions() for per-stop ETAs
+  tripId?: string;          // MBTA trip id. Pass to getTripPredictions() for per-stop ETAs
 };
 
 /** One upcoming stop of a specific train's trip (from getTripPredictions). */
@@ -95,7 +95,7 @@ export async function mbtaGet<T = unknown>(path: string, params: Record<string, 
     headers['x-api-key'] = API_KEY;
   } else if (!warnedNoKey) {
     warnedNoKey = true;
-    console.warn('[mbta] EXPO_PUBLIC_MBTA_API_KEY is not set — limited to 20 requests/minute.');
+    console.warn('[mbta] EXPO_PUBLIC_MBTA_API_KEY is not set, so the limit is 20 requests/minute.');
   }
 
   const controller = new AbortController();
@@ -111,14 +111,14 @@ export async function mbtaGet<T = unknown>(path: string, params: Record<string, 
   }
 
   if (!res.ok) {
-    if (res.status === 429) throw new MbtaError('MBTA rate limit hit — try again in a minute', 429);
-    if (res.status === 403) throw new MbtaError('MBTA API key was rejected — check EXPO_PUBLIC_MBTA_API_KEY', 403);
+    if (res.status === 429) throw new MbtaError('MBTA rate limit hit. Try again in a minute', 429);
+    if (res.status === 403) throw new MbtaError('MBTA API key was rejected. Check EXPO_PUBLIC_MBTA_API_KEY', 403);
     let detail = '';
     try {
       const body = (await res.json()) as { errors?: { detail?: string; code?: string }[] };
       detail = body.errors?.[0]?.detail ?? body.errors?.[0]?.code ?? '';
     } catch {
-      // body wasn't JSON — the status code is enough
+      // body wasn't JSON, so the status code is enough
     }
     throw new MbtaError(`MBTA request failed (HTTP ${res.status})${detail ? `: ${detail}` : ''}`, res.status);
   }

@@ -1,5 +1,5 @@
 /**
- * useArrivals(stationId) — upcoming Red Line trains at one station.
+ * useArrivals(stationId): upcoming Red Line trains at one station.
  *
  *   const { arrivals, loading, error } = useArrivals('KEN');   // optional 2nd arg: route (default 'Red')
  *

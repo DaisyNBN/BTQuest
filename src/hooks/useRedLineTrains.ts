@@ -1,5 +1,5 @@
 /**
- * useRedLineTrains() — every Red Line train with its live position.
+ * useRedLineTrains(): every Red Line train with its live position.
  *
  *   const { trains, loading, error } = useRedLineTrains();   // optional arg: route (default 'Red')
  *
