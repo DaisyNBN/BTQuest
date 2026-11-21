@@ -54,6 +54,13 @@ export type Train = {
   status: TrainStatus;
   stationId?: string;       // app id of the current/next station (mapped from the platform id)
   headsign?: string;
+  tripId?: string;          // MBTA trip id — pass to getTripPredictions() for per-stop ETAs
+};
+
+/** One upcoming stop of a specific train's trip (from getTripPredictions). */
+export type TripStopEta = {
+  stationId: string;        // app id
+  arrivalTime: Date | null;
 };
 
 export type Alert = {
@@ -307,9 +314,36 @@ export async function getRedLineTrains(route: RouteId = DEFAULT_ROUTE): Promise<
       status: a.current_status,
       stationId: stopId ? lookup.get(stopId) ?? stationByMbtaId(stopId)?.id : undefined,
       headsign: tripId ? headsigns.get(tripId) : undefined,
+      tripId,
     });
   }
   return trains;
+}
+
+/**
+ * ETAs for every stop a specific train still has to make on its trip, in
+ * order. Use `Train.tripId`. Returns [] if the trip has no predictions.
+ */
+export async function getTripPredictions(tripId: string, route: RouteId = DEFAULT_ROUTE): Promise<TripStopEta[]> {
+  const [doc, lookup] = await Promise.all([
+    mbtaGet<Doc<PredictionAttrs>>('/predictions', {
+      'filter[trip]': tripId,
+      sort: 'stop_sequence',
+    }),
+    getStationLookup(route),
+  ]);
+
+  const etas: TripStopEta[] = [];
+  for (const p of doc.data) {
+    const a = p.attributes;
+    if (a.schedule_relationship === 'CANCELLED' || a.schedule_relationship === 'SKIPPED') continue;
+    const stopId = relId(p, 'stop');
+    const stationId = stopId ? lookup.get(stopId) ?? stationByMbtaId(stopId)?.id : undefined;
+    if (!stationId) continue;
+    const timeStr = a.arrival_time ?? a.departure_time;
+    etas.push({ stationId, arrivalTime: timeStr ? new Date(timeStr) : null });
+  }
+  return etas;
 }
 
 /** Alerts active right now on the route, most severe first. */
